@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+
+@font-face {
+  font-family: 'Palo';
+  src: url('/fontes/Palo-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Palo';
+  src: url('/fontes/Palo-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply m-0 overflow-x-hidden font-inter;
+    min-width: 300px;
+    background-color: white; /* Fallback */
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-palo {
+    font-family: 'Palo', sans-serif;
+  }
+
+  .font-medium {
+    font-weight: 500;
+  }
+}
+
+/* O Canvas 3D fica fixo no fundo e sempre visível */
+#webgl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1; 
+  pointer-events: none;
+}
+
+/* Navbar acima de tudo */
+nav {
+  z-index: 50 !important;
+}
+
+/* Todo o conteúdo deve ser transparente para mostrar o canvas (céu + cartão) */
+main, section {
+  background: transparent !important;
+  position: relative;
+  z-index: 10;
+}
+
+.step-section {
+  height: 100vh;
+  min-height: 700px;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .step-section.compact-section,
+  .content-section.compact-section {
+    height: auto;
+    min-height: 0;
+    padding-top: 60px !important;
+    padding-bottom: 60px !important;
+  }
+}
+
+/* Apenas a parte final (FAQ/Footer) volta a ter fundo branco sólido */
+.content-section:not(.compact-section),
+footer {
+  background-color: white !important;
+  z-index: 20;
+}
+
+.step-section > div {
+  pointer-events: auto;
+}
