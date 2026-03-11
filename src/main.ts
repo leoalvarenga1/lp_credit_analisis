@@ -136,15 +136,17 @@ const clouds: THREE.Mesh[] = [];
 const cloudGroup = new THREE.Group();
 
 function initClouds() {
+    // Se for mobile, não adicionamos nuvens para evitar bugs de renderização no iOS
+    if (isMobileDevice) return;
+
     const cloudGeo = new THREE.PlaneGeometry(22, 14); 
     for (let i = 0; i < 15; i++) {
         const cloudMat = new THREE.MeshBasicMaterial({
             map: cloudTexture,
             transparent: true,
-            opacity: isMobileDevice ? 0.5 : 0.8, // Menor opacidade no mobile para suavizar bordas
+            opacity: 0.8, 
             depthWrite: false,
-            // Desktop mantém Fog (perfeito), Mobile desativa para tirar o roxo
-            fog: isMobileDevice ? false : true,
+            fog: true,
         });
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
         resetCloud(cloud, true);
@@ -243,12 +245,14 @@ function render() {
     scene.background = skyBlue.clone().lerp(white, skyFactor);
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(scene.background as THREE.Color);
 
-    // Ajustar opacidade das nuvens
-    clouds.forEach(cloud => {
-        if (cloud.material instanceof THREE.MeshBasicMaterial) {
-            cloud.material.opacity = cloudOpacityBase * (isMobileDevice ? 0.4 : 0.7);
-        }
-    });
+    // Ajustar opacidade das nuvens (apenas desktop)
+    if (!isMobileDevice) {
+        clouds.forEach(cloud => {
+            if (cloud.material instanceof THREE.MeshBasicMaterial) {
+                cloud.material.opacity = cloudOpacityBase * 0.7;
+            }
+        });
+    }
 
     let targetX = 0, targetY = 0;
     if (isMob) {
