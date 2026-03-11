@@ -71,16 +71,20 @@ function createCloudTexture() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
+    // Limpar canvas para evitar artefatos
+    ctx.clearRect(0, 0, 512, 512);
+
     const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)'); 
     grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
     grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
-    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0.01)'); // Evita 0 absoluto para GPUs mobile
     
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
     
     const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace; // Sincroniza com o renderer
     return tex;
 }
 
