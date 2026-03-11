@@ -1,6 +1,9 @@
 import './style.css';
 import * as THREE from 'three';
 
+// Detectar mobile de forma simples para ajustes específicos
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 // --- LÓGICA DE TEXTURAS ---
 async function loadHighResSVG(url: string, width: number, height: number): Promise<THREE.CanvasTexture> {
   return new Promise((resolve) => {
@@ -71,14 +74,21 @@ function createCloudTexture() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    // Limpar canvas para evitar artefatos
     ctx.clearRect(0, 0, 512, 512);
 
     const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)'); 
-    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
-    grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
-    grad.addColorStop(1, 'rgba(255, 255, 255, 0.01)'); // Evita 0 absoluto para GPUs mobile
+    
+    // No Mobile, usamos menos paradas de gradiente e cores mais sólidas para evitar artefatos de precisão
+    if (isMobileDevice) {
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); 
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    } else {
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)'); 
+        grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+        grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    }
     
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
@@ -105,12 +115,11 @@ function updateCamera() {
 }
 updateCamera();
 
+// Renderer Original (Desktop Perfeito)
 const renderer = new THREE.WebGLRenderer({ 
     canvas, 
     alpha: false, 
-    antialias: true,
-    powerPreference: "high-performance",
-    precision: "highp" // Força alta precisão para evitar erros de cor
+    antialias: true 
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -132,10 +141,10 @@ function initClouds() {
         const cloudMat = new THREE.MeshBasicMaterial({
             map: cloudTexture,
             transparent: true,
-            opacity: 0.8, 
+            opacity: isMobileDevice ? 0.5 : 0.8, // Menor opacidade no mobile para suavizar bordas
             depthWrite: false,
-            fog: false, // CRÍTICO: Desativar fog nas nuvens elimina o roxo no iOS
-            blending: THREE.NormalBlending
+            // Desktop mantém Fog (perfeito), Mobile desativa para tirar o roxo
+            fog: isMobileDevice ? false : true,
         });
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
         resetCloud(cloud, true);
@@ -237,7 +246,7 @@ function render() {
     // Ajustar opacidade das nuvens
     clouds.forEach(cloud => {
         if (cloud.material instanceof THREE.MeshBasicMaterial) {
-            cloud.material.opacity = cloudOpacityBase * 0.7;
+            cloud.material.opacity = cloudOpacityBase * (isMobileDevice ? 0.4 : 0.7);
         }
     });
 
