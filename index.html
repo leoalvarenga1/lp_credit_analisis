@@ -16,6 +16,9 @@
     <!-- O canvas 3D onde o cartão vai aparecer (Three.js) -->
     <canvas id="webgl-canvas"></canvas>
 
+    <!-- Atmosfera Suave para Mobile (Evita o azul chapado sem causar bugs de GPU) -->
+    <div id="mobile-atmosphere" class="fixed inset-0 pointer-events-none z-[2] hidden"></div>
+
     <!-- Navbar Oficial Style -->
     <nav
         class="fixed top-0 left-0 w-full z-40 p-4 md:px-10 flex items-center justify-between bg-white/80 backdrop-blur-md border-b border-gray-100">

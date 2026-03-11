@@ -45,6 +45,22 @@
   pointer-events: none;
 }
 
+/* Atmosfera Mobile (Lógica de esbranquiçado orgânico) */
+#mobile-atmosphere {
+  background: 
+    radial-gradient(circle at 10% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 90% 70%, rgba(255, 255, 255, 0.35) 0%, transparent 55%),
+    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.25) 0%, transparent 50%);
+  filter: blur(15px); /* Suaviza ainda mais as bordas */
+  opacity: 0.7;
+}
+
+@media (max-width: 767px) {
+  #mobile-atmosphere {
+    display: block !important;
+  }
+}
+
 /* Navbar acima de tudo */
 nav {
   z-index: 50 !important;

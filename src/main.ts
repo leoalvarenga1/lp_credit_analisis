@@ -245,6 +245,15 @@ function render() {
     scene.background = skyBlue.clone().lerp(white, skyFactor);
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(scene.background as THREE.Color);
 
+    // Ajustar opacidade da atmosfera mobile (se existir)
+    if (isMobileDevice) {
+        const mobAtm = document.getElementById('mobile-atmosphere');
+        if (mobAtm) {
+            // Acompanha a visibilidade das nuvens: diminui conforme o céu vira branco (S2/FAQ)
+            mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
+        }
+    }
+
     // Ajustar opacidade das nuvens (apenas desktop)
     if (!isMobileDevice) {
         clouds.forEach(cloud => {
