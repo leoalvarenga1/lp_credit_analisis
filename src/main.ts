@@ -84,7 +84,8 @@ function createCloudTexture() {
     ctx.fillRect(0, 0, 512, 512);
     
     const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace; // Sincroniza com o renderer
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.premultiplyAlpha = false; // CRÍTICO: Evita artefatos no iOS
     return tex;
 }
 
@@ -105,7 +106,12 @@ function updateCamera() {
 }
 updateCamera();
 
-const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true });
+const renderer = new THREE.WebGLRenderer({ 
+    canvas, 
+    alpha: false, 
+    antialias: true,
+    powerPreference: "high-performance" 
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -128,6 +134,8 @@ function initClouds() {
             transparent: true,
             opacity: 0.8, 
             depthWrite: false,
+            alphaTest: 0.05, // Descarta pixels problemáticos de baixa opacidade
+            blending: THREE.NormalBlending
         });
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
         resetCloud(cloud, true);
