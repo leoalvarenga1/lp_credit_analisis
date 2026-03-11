@@ -118,7 +118,7 @@ updateCamera();
 // Renderer Original (Desktop Perfeito)
 const renderer = new THREE.WebGLRenderer({ 
     canvas, 
-    alpha: false, 
+    alpha: true, // Permitir transparência
     antialias: true 
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -242,17 +242,24 @@ function render() {
         cloudOpacityBase = 1.0 - skyFactor;
     }
 
-    scene.background = skyBlue.clone().lerp(white, skyFactor);
-    if (scene.fog) (scene.fog as THREE.Fog).color.copy(scene.background as THREE.Color);
-
-    // Ajustar opacidade da atmosfera mobile (se existir)
+    const currentSkyColor = skyBlue.clone().lerp(white, skyFactor);
+    
     if (isMobileDevice) {
+        // No mobile, o fundo do 3D é transparente e o CSS cuida da cor
+        scene.background = null;
+        document.body.style.backgroundColor = `#${currentSkyColor.getHexString()}`;
+        
         const mobAtm = document.getElementById('mobile-atmosphere');
         if (mobAtm) {
             // Acompanha a visibilidade das nuvens: diminui conforme o céu vira branco (S2/FAQ)
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
+    } else {
+        // No desktop, mantemos o comportamento original perfeito
+        scene.background = currentSkyColor;
     }
+
+    if (scene.fog) (scene.fog as THREE.Fog).color.copy(currentSkyColor);
 
     // Ajustar opacidade das nuvens (apenas desktop)
     if (!isMobileDevice) {
