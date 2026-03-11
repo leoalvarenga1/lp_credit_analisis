@@ -77,18 +77,10 @@ function createCloudTexture() {
     ctx.clearRect(0, 0, 512, 512);
 
     const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-    
-    // No Mobile, usamos menos paradas de gradiente e cores mais sólidas para evitar artefatos de precisão
-    if (isMobileDevice) {
-        grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); 
-        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    } else {
-        grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)'); 
-        grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
-        grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    }
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)'); 
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+    grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
@@ -115,10 +107,11 @@ function updateCamera() {
 }
 updateCamera();
 
-// Renderer Original (Desktop Perfeito)
+// VOLTANDO PARA O RENDERER ORIGINAL (Desktop Perfeito)
+// Usamos alpha: true apenas se for mobile para permitir a atmosfera por trás
 const renderer = new THREE.WebGLRenderer({ 
     canvas, 
-    alpha: true, // Permitir transparência
+    alpha: isMobileDevice ? true : false, 
     antialias: true 
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -136,7 +129,7 @@ const clouds: THREE.Mesh[] = [];
 const cloudGroup = new THREE.Group();
 
 function initClouds() {
-    // Se for mobile, não adicionamos nuvens para evitar bugs de renderização no iOS
+    // No mobile, não criamos nuvens 3D (causam bug)
     if (isMobileDevice) return;
 
     const cloudGeo = new THREE.PlaneGeometry(22, 14); 
@@ -243,25 +236,24 @@ function render() {
     }
 
     const currentSkyColor = skyBlue.clone().lerp(white, skyFactor);
-    
+
     if (isMobileDevice) {
-        // No mobile, o fundo do 3D é transparente e o CSS cuida da cor
+        // Mobile: Usa fundo CSS e atmosfera atrás
         scene.background = null;
         document.body.style.backgroundColor = `#${currentSkyColor.getHexString()}`;
-        
         const mobAtm = document.getElementById('mobile-atmosphere');
         if (mobAtm) {
-            // Acompanha a visibilidade das nuvens: diminui conforme o céu vira branco (S2/FAQ)
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
     } else {
-        // No desktop, mantemos o comportamento original perfeito
+        // DESKTOP ORIGINAL: Mantém o comportamento exato original
         scene.background = currentSkyColor;
+        document.body.style.backgroundColor = 'white'; // Reset
     }
 
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(currentSkyColor);
 
-    // Ajustar opacidade das nuvens (apenas desktop)
+    // Ajustar opacidade das nuvens (Apenas Desktop)
     if (!isMobileDevice) {
         clouds.forEach(cloud => {
             if (cloud.material instanceof THREE.MeshBasicMaterial) {
