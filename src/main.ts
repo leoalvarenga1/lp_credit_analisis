@@ -150,7 +150,7 @@ const cardGroup = new THREE.Group();
 
 // 1. MODELO CARTÃO (Sessão 0)
 const cardW = 2.65, cardH = 4.05;
-loadHighResSVG('/VerticalCard.svg', 512, 828).then((frontTex) => {
+loadHighResSVG('./VerticalCard.svg', 512, 828).then((frontTex) => {
     const cardGeo = new THREE.PlaneGeometry(cardW, cardH);
     const backTex = createBackTexture();
     const frontMat = new THREE.MeshPhysicalMaterial({ map: frontTex, transparent: true, metalness: 0.1, roughness: 0.4, clearcoat: 0.3 });
