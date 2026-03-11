@@ -107,11 +107,9 @@ function updateCamera() {
 }
 updateCamera();
 
-// VOLTANDO PARA O RENDERER ORIGINAL (Desktop Perfeito)
-// Usamos alpha: true apenas se for mobile para permitir a atmosfera por trás
 const renderer = new THREE.WebGLRenderer({ 
     canvas, 
-    alpha: isMobileDevice ? true : false, 
+    alpha: true, 
     antialias: true 
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -129,7 +127,6 @@ const clouds: THREE.Mesh[] = [];
 const cloudGroup = new THREE.Group();
 
 function initClouds() {
-    // No mobile, não criamos nuvens 3D (causam bug)
     if (isMobileDevice) return;
 
     const cloudGeo = new THREE.PlaneGeometry(22, 14); 
@@ -169,11 +166,23 @@ const cardW = 2.65, cardH = 4.05;
 loadHighResSVG('./VerticalCard.svg', 512, 828).then((frontTex) => {
     const cardGeo = new THREE.PlaneGeometry(cardW, cardH);
     const backTex = createBackTexture();
-    const frontMat = new THREE.MeshPhysicalMaterial({ map: frontTex, transparent: true, metalness: 0.1, roughness: 0.4, clearcoat: 0.3 });
+    const frontMat = new THREE.MeshPhysicalMaterial({ 
+        map: frontTex, 
+        transparent: true, 
+        metalness: 0.1, 
+        roughness: 0.4, 
+        clearcoat: 0.3 
+    });
     const frontMesh = new THREE.Mesh(cardGeo, frontMat);
     frontMesh.position.z = 0.01;
     cardGroup.add(frontMesh);
-    const backMat = new THREE.MeshPhysicalMaterial({ map: backTex, transparent: true, metalness: 0.1, roughness: 0.4, clearcoat: 0.3 });
+    const backMat = new THREE.MeshPhysicalMaterial({ 
+        map: backTex, 
+        transparent: true, 
+        metalness: 0.1, 
+        roughness: 0.4, 
+        clearcoat: 0.3 
+    });
     const backMesh = new THREE.Mesh(cardGeo, backMat);
     backMesh.rotation.y = Math.PI;
     backMesh.position.z = -0.01;
@@ -205,32 +214,30 @@ function render() {
     const time = clock.getElapsedTime();
     const scrollProgress = scrollY / window.innerHeight;
 
-    // Resetar animação de entrada ao voltar para a Sessão 1
     if (activeSection === 0 && lastActiveSection !== 0) {
         cardEntryTime = time;
     }
     lastActiveSection = activeSection;
 
-    // Animar nuvens
-    clouds.forEach(cloud => {
-        cloud.position.x -= (cloud as any).speed;
-        if (cloud.position.x < -60) resetCloud(cloud);
-    });
+    // --- ANIMAÇÃO DAS NUVENS ---
+    // Movemos apenas se houver nuvens no array (Desktop)
+    if (clouds.length > 0) {
+        clouds.forEach(cloud => {
+            cloud.position.x -= (cloud as any).speed;
+            if (cloud.position.x < -60) resetCloud(cloud);
+        });
+    }
 
-    // --- LÓGICA DE COR DO CÉU E NUVENS (S1: Azul, S2: Branco, S3: Azul, FAQ: Branco) ---
     let skyFactor = 0;
     let cloudOpacityBase = 1.0;
 
     if (scrollProgress <= 1.0) {
-        // S1 (Azul) para S2 (Branco)
         skyFactor = Math.max(0, Math.min(1, scrollProgress));
         cloudOpacityBase = 1.0 - skyFactor; 
     } else if (scrollProgress <= 2.0) {
-        // S2 (Branco) para S3 (Azul)
         skyFactor = Math.max(0, Math.min(1, 1.0 - (scrollProgress - 1.0)));
         cloudOpacityBase = 1.0 - skyFactor;
     } else {
-        // S3 (Azul) para FAQ (Branco) - IGUAL À S1->S2
         skyFactor = Math.max(0, Math.min(1, scrollProgress - 2.0));
         cloudOpacityBase = 1.0 - skyFactor;
     }
@@ -238,7 +245,6 @@ function render() {
     const currentSkyColor = skyBlue.clone().lerp(white, skyFactor);
 
     if (isMobileDevice) {
-        // Mobile: Usa fundo CSS e atmosfera atrás
         scene.background = null;
         document.body.style.backgroundColor = `#${currentSkyColor.getHexString()}`;
         const mobAtm = document.getElementById('mobile-atmosphere');
@@ -246,21 +252,18 @@ function render() {
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
     } else {
-        // DESKTOP ORIGINAL: Mantém o comportamento exato original
         scene.background = currentSkyColor;
-        document.body.style.backgroundColor = 'white'; // Reset
-    }
-
-    if (scene.fog) (scene.fog as THREE.Fog).color.copy(currentSkyColor);
-
-    // Ajustar opacidade das nuvens (Apenas Desktop)
-    if (!isMobileDevice) {
+        document.body.style.backgroundColor = 'white';
+        
+        // Ajustar opacidade das nuvens no Desktop
         clouds.forEach(cloud => {
             if (cloud.material instanceof THREE.MeshBasicMaterial) {
                 cloud.material.opacity = cloudOpacityBase * 0.7;
             }
         });
     }
+
+    if (scene.fog) (scene.fog as THREE.Fog).color.copy(currentSkyColor);
 
     let targetX = 0, targetY = 0;
     if (isMob) {
@@ -289,14 +292,12 @@ function render() {
         curY += (targetY - curY) * 0.1;
     }
 
-    // CARTÃO: Opacidade
     const baseCardScale = isMob ? 0.8 : 1.2; 
     let cardOpacity = 1;
 
     if (isMob) {
         cardOpacity = Math.max(0, 1 - scrollProgress * 1.5);
     } else {
-        // Desktop: Fade out igual à transição do céu (S3 -> FAQ)
         if (scrollProgress <= 2.0) cardOpacity = 1;
         else cardOpacity = Math.max(0, 1 - (scrollProgress - 2.0));
     }
