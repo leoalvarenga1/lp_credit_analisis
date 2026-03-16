@@ -74,14 +74,16 @@ function createCloudTexture() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    ctx.clearRect(0, 0, 512, 512);
+    // Black background = fully invisible with AdditiveBlending (no purple-dot artifacts on Safari)
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, 512, 512);
 
     const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-    grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)'); 
-    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
-    grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
-    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    
+    grad.addColorStop(0,   'rgb(255, 255, 255)');
+    grad.addColorStop(0.3, 'rgb(200, 200, 200)');
+    grad.addColorStop(0.6, 'rgb(40,  40,  40)');
+    grad.addColorStop(1,   'rgb(0,   0,   0)');
+
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
     
@@ -133,10 +135,9 @@ function initClouds() {
     for (let i = 0; i < 15; i++) {
         const cloudMat = new THREE.MeshBasicMaterial({
             map: cloudTexture,
-            transparent: true,
-            opacity: 0.8, 
             depthWrite: false,
             fog: true,
+            blending: THREE.AdditiveBlending,
         });
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
         resetCloud(cloud, true);
