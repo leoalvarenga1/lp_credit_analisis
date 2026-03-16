@@ -118,8 +118,8 @@ footer {
   }
 
   .asset2-wrapper {
-    width: 86vw;
-    max-width: 336px;
+    width: 100%;
+    max-width: 440px;
     aspect-ratio: 1 / 1;
     border-radius: 24px;
     overflow: hidden;
@@ -143,8 +143,8 @@ footer {
   }
 
   .asset3-wrapper {
-    width: 86vw;
-    max-width: 336px;
+    width: 100%;
+    max-width: 440px;
     aspect-ratio: 1 / 1;
     border-radius: 24px;
     overflow: hidden;
