@@ -194,6 +194,7 @@ if (isMobileDevice) {
           border-radius:50%;
           background:radial-gradient(circle, rgba(255,255,255,${cfg.opacity}) 0%, rgba(255,255,255,0) 70%);
           animation: cloud-drift ${cfg.duration}s linear ${cfg.delay}s infinite;
+          will-change: transform;
           pointer-events:none;
         `;
         mobileCloudsContainer.appendChild(el);
@@ -242,9 +243,14 @@ window.addEventListener('scroll', () => {
     activeSection = Math.round(scrollY / window.innerHeight);
 });
 
+let resizeTimer: ReturnType<typeof setTimeout>;
 window.addEventListener('resize', () => {
-    updateCamera();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Debounce to avoid iOS Safari URL-bar hide/show causing mid-scroll canvas resize
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        updateCamera();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }, 150);
 });
 
 let curX = 0, curY = 0;
