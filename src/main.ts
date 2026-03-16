@@ -194,9 +194,9 @@ loadHighResSVG('./VerticalCard.svg', 512, 828).then((frontTex) => {
 
 let scrollY = 0;
 let activeSection = 0;
-window.addEventListener('scroll', () => { 
+window.addEventListener('scroll', () => {
     scrollY = window.scrollY;
-    activeSection = Math.round(scrollY / window.innerHeight); 
+    activeSection = Math.round(scrollY / window.innerHeight);
 });
 
 window.addEventListener('resize', () => {
@@ -207,6 +207,10 @@ window.addEventListener('resize', () => {
 let curX = 0, curY = 0;
 let cardEntryTime = 0;
 let lastActiveSection = -1;
+// Hysteresis zone: card commits to a position and only leaves when scroll
+// crosses a dedicated exit threshold — prevents oscillation from trackpad micro-reversals
+// Zone 0 = hero (+X), Zone 1 = section 1 (-X), Zone 2 = section 2+ (+X)
+let cardTargetZone = 0;
 const clock = new THREE.Clock();
 
 function render() {
@@ -270,9 +274,18 @@ function render() {
         targetX = 0; 
         targetY = 2.5; 
     } else {
-        if (activeSection === 0) targetX = 3.8;
-        else if (activeSection === 1) targetX = -3.8;
-        else targetX = 3.8;
+        // Scale card X position on wide screens to avoid huge gap between text and card
+        const widthScale = Math.min(1, 1920 / window.innerWidth);
+        const cardXOffset = 3.8 * (0.5 + 0.5 * widthScale);
+        // Hysteresis zones: different thresholds for entering vs leaving each zone.
+        // This prevents the trackpad micro-reversal oscillation ("engasgada").
+        // Enter zone going DOWN at lower sp; exit zone going UP at higher sp.
+        if (cardTargetZone === 0 && scrollProgress >= 0.20) cardTargetZone = 1;
+        if (cardTargetZone === 1 && scrollProgress <  0.40) cardTargetZone = 0;
+        if (cardTargetZone === 1 && scrollProgress >= 1.40) cardTargetZone = 2;
+        if (cardTargetZone === 2 && scrollProgress <  1.60) cardTargetZone = 1;
+        const zoneX = [cardXOffset, -cardXOffset, cardXOffset];
+        targetX = zoneX[cardTargetZone];
         targetY = 0;
     }
 
@@ -288,11 +301,13 @@ function render() {
             curY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
         }
     } else {
-        curX += (targetX - curX) * 0.12; 
+        // Fast easing when far from target (quickly clears text zones), slower on arrival
+        const distX = Math.abs(targetX - curX);
+        curX += (targetX - curX) * (distX > 2.0 ? 0.22 : 0.12);
         curY += (targetY - curY) * 0.1;
     }
 
-    const baseCardScale = isMob ? 0.8 : 1.2; 
+    const baseCardScale = isMob ? 0.8 : 1.2;
     let cardOpacity = 1;
 
     if (isMob) {
@@ -302,11 +317,17 @@ function render() {
         else cardOpacity = Math.max(0, 1 - (scrollProgress - 2.0));
     }
     
-    cardGroup.scale.set(baseCardScale, baseCardScale, baseCardScale);
-    
     if (!isMob) {
         const velocityX = (targetX - curX);
-        const travelZ = -Math.abs(velocityX) * 0.5; 
+        const dist = Math.abs(velocityX);
+        // Shrink card during transition to avoid overlapping text, grow back on arrival
+        // Ultra-wide screens (>1920px) need more aggressive shrinking
+        const distNorm = Math.min(1, dist / 7.6);
+        const shrinkFactor = window.innerWidth > 1920 ? 0.82 : 0.65;
+        const transitScale = baseCardScale * (1 - shrinkFactor * distNorm);
+        cardGroup.scale.set(transitScale, transitScale, transitScale);
+
+        const travelZ = -dist * 1.2;
         const floatingY = Math.sin(time * 1.0) * 0.10;
         cardGroup.position.set(curX, curY + floatingY, travelZ);
 
@@ -336,6 +357,7 @@ function render() {
             cardGroup.rotation.y = currentY + ((Math.PI * 2 + targetRotY) - currentY) * 0.04;
         }
     } else {
+        cardGroup.scale.set(baseCardScale, baseCardScale, baseCardScale);
         cardGroup.position.set(curX, curY + Math.sin(time * 1.5) * 0.05, 0);
         cardGroup.rotation.y = time * 1.5;
         cardGroup.rotation.x = Math.sin(time * 0.5) * 0.1;
