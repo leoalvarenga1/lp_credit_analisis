@@ -159,6 +159,7 @@ loadHighResSVG('./VerticalCard.svg', 512, 828).then((frontTex) => {
 let scrollY = 0;
 let activeSection = 0;
 const mainNav = document.getElementById('main-nav');
+const asset2Container = document.getElementById('asset2-container');
 window.addEventListener('scroll', () => {
     scrollY = window.scrollY;
     activeSection = Math.round(scrollY / window.innerHeight);
@@ -171,6 +172,12 @@ window.addEventListener('scroll', () => {
             mainNav.style.backgroundColor = 'white';
             mainNav.style.backdropFilter = 'none';
         }
+    }
+    // Asset2: fade out ao scrollar da seção 1 para a 2 (mobile only)
+    if (asset2Container && window.innerWidth < 768) {
+        const sp = scrollY / window.innerHeight;
+        const opacity = Math.max(0, Math.min(1, 1 - (sp - 1.0) / 0.6));
+        asset2Container.style.opacity = opacity.toString();
     }
 });
 
