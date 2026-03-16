@@ -135,6 +135,7 @@ function initClouds() {
     for (let i = 0; i < 15; i++) {
         const cloudMat = new THREE.MeshBasicMaterial({
             map: cloudTexture,
+            transparent: true,
             depthWrite: false,
             fog: true,
             blending: THREE.AdditiveBlending,
