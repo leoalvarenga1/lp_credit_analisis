@@ -12,7 +12,7 @@ async function loadHighResSVG(url: string, width: number, height: number): Promi
     img.src = url;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const scale = 12; 
+      const scale = 12;
       canvas.width = width * scale;
       canvas.height = height * scale;
       const ctx = canvas.getContext('2d');
@@ -21,7 +21,7 @@ async function loadHighResSVG(url: string, width: number, height: number): Promi
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       }
       const texture = new THREE.CanvasTexture(canvas);
-      texture.anisotropy = 16; 
+      texture.anisotropy = 16;
       texture.colorSpace = THREE.SRGBColorSpace;
       resolve(texture);
     };
@@ -38,11 +38,11 @@ function createBackTexture(): THREE.CanvasTexture {
   const radius = 30;
   ctx.beginPath();
   ctx.roundRect(0, 0, 512, 828, radius);
-  ctx.clip(); 
+  ctx.clip();
 
   const grad = ctx.createLinearGradient(0, 0, 0, 828);
-  grad.addColorStop(0, '#3E91F7'); 
-  grad.addColorStop(1, '#74F9F1'); 
+  grad.addColorStop(0, '#3E91F7');
+  grad.addColorStop(1, '#74F9F1');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 512, 828);
 
@@ -75,6 +75,7 @@ function createCloudTexture() {
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
     ctx.clearRect(0, 0, 512, 512);
+
     const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
     grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
     grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
@@ -101,15 +102,15 @@ const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerH
 
 function updateCamera() {
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.position.z = window.innerWidth < 768 ? 14.0 : 11; 
+    camera.position.z = window.innerWidth < 768 ? 14.0 : 11;
     camera.updateProjectionMatrix();
 }
 updateCamera();
 
-const renderer = new THREE.WebGLRenderer({ 
-    canvas, 
-    alpha: true, 
-    antialias: true 
+const renderer = new THREE.WebGLRenderer({
+    canvas,
+    alpha: true,
+    antialias: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -120,13 +121,14 @@ const light = new THREE.DirectionalLight(0xffffff, 1.5);
 light.position.set(5, 15, 10);
 scene.add(light);
 
-// NUVENS
+// NUVENS (desktop apenas — Three.js)
 const cloudTexture = createCloudTexture();
 const clouds: THREE.Mesh[] = [];
 const cloudGroup = new THREE.Group();
 
 function initClouds() {
     if (isMobileDevice) return;
+
     const cloudGeo = new THREE.PlaneGeometry(22, 14);
     for (let i = 0; i < 15; i++) {
         const cloudMat = new THREE.MeshBasicMaterial({
@@ -147,7 +149,7 @@ function initClouds() {
 function resetCloud(cloud: THREE.Mesh, initial = false) {
     cloud.position.x = initial ? (Math.random() * 100 - 50) : 60;
     cloud.position.y = Math.random() * 30 - 15;
-    cloud.position.z = -5 - Math.random() * 25; 
+    cloud.position.z = -5 - Math.random() * 25;
     const s = 1.2 + Math.random() * 2.5;
     cloud.scale.set(s, s * 0.6, s);
     (cloud as any).speed = 0.01 + Math.random() * 0.02;
@@ -163,7 +165,6 @@ if (isMobileDevice) {
     mobileCloudsContainer.style.cssText = 'position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;';
     document.body.appendChild(mobileCloudsContainer);
 
-    // Inject keyframes once
     const style = document.createElement('style');
     style.textContent = `
       @keyframes cloud-drift {
@@ -173,7 +174,6 @@ if (isMobileDevice) {
     `;
     document.head.appendChild(style);
 
-    // Create 8 cloud divs with varying sizes and speeds
     const cloudConfigs = [
         { top: '5%',  size: 280, duration: 35, delay: 0,   opacity: 0.35 },
         { top: '15%', size: 220, duration: 45, delay: -12,  opacity: 0.25 },
@@ -210,22 +210,22 @@ const cardW = 2.65, cardH = 4.05;
 loadHighResSVG('./VerticalCard.svg', 512, 828).then((frontTex) => {
     const cardGeo = new THREE.PlaneGeometry(cardW, cardH);
     const backTex = createBackTexture();
-    const frontMat = new THREE.MeshPhysicalMaterial({ 
-        map: frontTex, 
-        transparent: true, 
-        metalness: 0.1, 
-        roughness: 0.4, 
-        clearcoat: 0.3 
+    const frontMat = new THREE.MeshPhysicalMaterial({
+        map: frontTex,
+        transparent: true,
+        metalness: 0.1,
+        roughness: 0.4,
+        clearcoat: 0.3
     });
     const frontMesh = new THREE.Mesh(cardGeo, frontMat);
     frontMesh.position.z = 0.01;
     cardGroup.add(frontMesh);
-    const backMat = new THREE.MeshPhysicalMaterial({ 
-        map: backTex, 
-        transparent: true, 
-        metalness: 0.1, 
-        roughness: 0.4, 
-        clearcoat: 0.3 
+    const backMat = new THREE.MeshPhysicalMaterial({
+        map: backTex,
+        transparent: true,
+        metalness: 0.1,
+        roughness: 0.4,
+        clearcoat: 0.3
     });
     const backMesh = new THREE.Mesh(cardGeo, backMat);
     backMesh.rotation.y = Math.PI;
@@ -243,14 +243,9 @@ window.addEventListener('scroll', () => {
     activeSection = Math.round(scrollY / window.innerHeight);
 });
 
-let resizeTimer: ReturnType<typeof setTimeout>;
 window.addEventListener('resize', () => {
-    // Debounce to avoid iOS Safari URL-bar hide/show causing mid-scroll canvas resize
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-        updateCamera();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }, 150);
+    updateCamera();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 let curX = 0, curY = 0;
@@ -286,7 +281,7 @@ function render() {
 
     if (scrollProgress <= 1.0) {
         skyFactor = Math.max(0, Math.min(1, scrollProgress));
-        cloudOpacityBase = 1.0 - skyFactor; 
+        cloudOpacityBase = 1.0 - skyFactor;
     } else if (scrollProgress <= 2.0) {
         skyFactor = Math.max(0, Math.min(1, 1.0 - (scrollProgress - 1.0)));
         cloudOpacityBase = 1.0 - skyFactor;
@@ -304,14 +299,14 @@ function render() {
         if (mobAtm) {
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
-        // Fade CSS clouds with scroll (same as desktop Three.js clouds)
+        // Fade CSS clouds with scroll
         if (mobileCloudsContainer) {
             mobileCloudsContainer.style.opacity = cloudOpacityBase.toString();
         }
     } else {
         scene.background = currentSkyColor;
         document.body.style.backgroundColor = 'white';
-        
+
         // Ajustar opacidade das nuvens no Desktop
         clouds.forEach(cloud => {
             if (cloud.material instanceof THREE.MeshBasicMaterial) {
@@ -324,8 +319,8 @@ function render() {
 
     let targetX = 0, targetY = 0;
     if (isMob) {
-        targetX = 0; 
-        targetY = 2.5; 
+        targetX = 0;
+        targetY = 2.5;
     } else {
         // Scale card X position on wide screens to avoid huge gap between text and card
         const widthScale = Math.min(1, 1920 / window.innerWidth);
@@ -348,13 +343,13 @@ function render() {
     if (isMob) {
         curX = 0;
         const mobileLimit = 0.8;
+        // Use easing on Y to smooth out iOS scroll jitter
         let targetMobileY: number;
         if (scrollProgress < mobileLimit) {
             targetMobileY = 2.5 + (scrollProgress * viewport3DHeight);
         } else {
             targetMobileY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
         }
-        // Easing on mobile Y to smooth out scroll jitter (same idea as desktop X easing)
         curY += (targetMobileY - curY) * 0.18;
     } else {
         // Fast easing when far from target (quickly clears text zones), slower on arrival
@@ -367,12 +362,13 @@ function render() {
     let cardOpacity = 1;
 
     if (isMob) {
+        // Faster fade-out on mobile: gone by ~33% scroll, before jitter becomes visible
         cardOpacity = Math.max(0, 1 - scrollProgress * 3.0);
     } else {
         if (scrollProgress <= 2.0) cardOpacity = 1;
         else cardOpacity = Math.max(0, 1 - (scrollProgress - 2.0));
     }
-    
+
     if (!isMob) {
         const velocityX = (targetX - curX);
         const dist = Math.abs(velocityX);
@@ -391,7 +387,7 @@ function render() {
         const entryDuration = 1.8;
         const entryProgress = Math.min(1.0, elapsedSinceEntry / entryDuration);
         const entryEase = 1 - Math.pow(1 - entryProgress, 3);
-        
+
         const oscX = Math.sin(time * 0.7) * 0.12;
         const oscY = Math.cos(time * 0.5) * 0.03;
 
@@ -403,7 +399,7 @@ function render() {
 
         cardGroup.rotation.z += (targetRotZ - cardGroup.rotation.z) * 0.05;
         cardGroup.rotation.x += (targetRotX - cardGroup.rotation.x) * 0.05;
-        
+
         if (entryProgress < 1.0) {
             cardGroup.rotation.y = (entryEase * Math.PI * 2) + (targetRotY * entryEase);
         } else {
@@ -418,7 +414,7 @@ function render() {
         cardGroup.rotation.y = time * 1.5;
         cardGroup.rotation.x = Math.sin(time * 0.5) * 0.1;
     }
-    
+
     cardGroup.traverse((obj) => {
         if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshPhysicalMaterial) {
             obj.material.opacity = cardOpacity;
