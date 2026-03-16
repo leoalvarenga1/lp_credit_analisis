@@ -74,15 +74,12 @@ function createCloudTexture() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return new THREE.CanvasTexture(canvas);
 
-    // Black background = fully invisible with AdditiveBlending (avoids purple dot artifacts on mobile)
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, 512, 512);
-
+    ctx.clearRect(0, 0, 512, 512);
     const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-    grad.addColorStop(0,   'rgb(255, 255, 255)');
-    grad.addColorStop(0.3, 'rgb(200, 200, 200)');
-    grad.addColorStop(0.6, 'rgb(40, 40, 40)');
-    grad.addColorStop(1,   'rgb(0, 0, 0)');
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+    grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.2)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
@@ -129,14 +126,15 @@ const clouds: THREE.Mesh[] = [];
 const cloudGroup = new THREE.Group();
 
 function initClouds() {
-    const count = isMobileDevice ? 8 : 15;
+    if (isMobileDevice) return;
     const cloudGeo = new THREE.PlaneGeometry(22, 14);
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 15; i++) {
         const cloudMat = new THREE.MeshBasicMaterial({
             map: cloudTexture,
+            transparent: true,
+            opacity: 0.8,
             depthWrite: false,
-            fog: !isMobileDevice,
-            blending: THREE.AdditiveBlending,
+            fog: true,
         });
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
         resetCloud(cloud, true);
@@ -156,6 +154,51 @@ function resetCloud(cloud: THREE.Mesh, initial = false) {
 }
 
 initClouds();
+
+// --- NUVENS CSS PARA MOBILE (evita artefatos WebGL/purple dots) ---
+let mobileCloudsContainer: HTMLDivElement | null = null;
+if (isMobileDevice) {
+    mobileCloudsContainer = document.createElement('div');
+    mobileCloudsContainer.id = 'mobile-clouds';
+    mobileCloudsContainer.style.cssText = 'position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;';
+    document.body.appendChild(mobileCloudsContainer);
+
+    // Inject keyframes once
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes cloud-drift {
+        from { transform: translateX(110vw); }
+        to   { transform: translateX(-120vw); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Create 8 cloud divs with varying sizes and speeds
+    const cloudConfigs = [
+        { top: '5%',  size: 280, duration: 35, delay: 0,   opacity: 0.35 },
+        { top: '15%', size: 220, duration: 45, delay: -12,  opacity: 0.25 },
+        { top: '25%', size: 320, duration: 40, delay: -20,  opacity: 0.3  },
+        { top: '40%', size: 200, duration: 50, delay: -8,   opacity: 0.2  },
+        { top: '55%', size: 260, duration: 38, delay: -25,  opacity: 0.3  },
+        { top: '65%', size: 180, duration: 55, delay: -15,  opacity: 0.2  },
+        { top: '75%', size: 300, duration: 42, delay: -30,  opacity: 0.25 },
+        { top: '85%', size: 240, duration: 48, delay: -5,   opacity: 0.2  },
+    ];
+    for (const cfg of cloudConfigs) {
+        const el = document.createElement('div');
+        el.style.cssText = `
+          position:absolute;
+          top:${cfg.top};
+          width:${cfg.size}px;
+          height:${cfg.size * 0.55}px;
+          border-radius:50%;
+          background:radial-gradient(circle, rgba(255,255,255,${cfg.opacity}) 0%, rgba(255,255,255,0) 70%);
+          animation: cloud-drift ${cfg.duration}s linear ${cfg.delay}s infinite;
+          pointer-events:none;
+        `;
+        mobileCloudsContainer.appendChild(el);
+    }
+}
 
 // --- CRIAÇÃO DOS MODELOS ---
 
@@ -255,11 +298,10 @@ function render() {
         if (mobAtm) {
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
-        clouds.forEach(cloud => {
-            if (cloud.material instanceof THREE.MeshBasicMaterial) {
-                cloud.material.opacity = cloudOpacityBase * 0.8;
-            }
-        });
+        // Fade CSS clouds with scroll (same as desktop Three.js clouds)
+        if (mobileCloudsContainer) {
+            mobileCloudsContainer.style.opacity = cloudOpacityBase.toString();
+        }
     } else {
         scene.background = currentSkyColor;
         document.body.style.backgroundColor = 'white';
