@@ -157,6 +157,33 @@ function resetCloud(cloud: THREE.Mesh, initial = false) {
 
 initClouds();
 
+// --- NUVENS CSS PARA MOBILE (evita artefatos WebGL/purple dots) ---
+let mobileCloudsContainer: HTMLDivElement | null = null;
+if (isMobileDevice) {
+    mobileCloudsContainer = document.createElement('div');
+    mobileCloudsContainer.id = 'mobile-clouds';
+    mobileCloudsContainer.style.cssText = 'position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;';
+    document.body.appendChild(mobileCloudsContainer);
+    const style = document.createElement('style');
+    style.textContent = `@keyframes cloud-drift { from { transform:translateX(110vw); } to { transform:translateX(-120vw); } }`;
+    document.head.appendChild(style);
+    const cloudConfigs = [
+        { top: '5%',  size: 280, duration: 35, delay: 0,   opacity: 0.35 },
+        { top: '15%', size: 220, duration: 45, delay: -12,  opacity: 0.25 },
+        { top: '25%', size: 320, duration: 40, delay: -20,  opacity: 0.3  },
+        { top: '40%', size: 200, duration: 50, delay: -8,   opacity: 0.2  },
+        { top: '55%', size: 260, duration: 38, delay: -25,  opacity: 0.3  },
+        { top: '65%', size: 180, duration: 55, delay: -15,  opacity: 0.2  },
+        { top: '75%', size: 300, duration: 42, delay: -30,  opacity: 0.25 },
+        { top: '85%', size: 240, duration: 48, delay: -5,   opacity: 0.2  },
+    ];
+    for (const cfg of cloudConfigs) {
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;top:${cfg.top};width:${cfg.size}px;height:${cfg.size * 0.55}px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,${cfg.opacity}) 0%,rgba(255,255,255,0) 70%);animation:cloud-drift ${cfg.duration}s linear ${cfg.delay}s infinite;will-change:transform;pointer-events:none;`;
+        mobileCloudsContainer.appendChild(el);
+    }
+}
+
 // --- CRIAÇÃO DOS MODELOS ---
 
 const cardGroup = new THREE.Group();
@@ -255,6 +282,9 @@ function render() {
         if (mobAtm) {
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
+        if (mobileCloudsContainer) {
+            mobileCloudsContainer.style.opacity = cloudOpacityBase.toString();
+        }
     } else {
         scene.background = currentSkyColor;
         document.body.style.backgroundColor = 'white';
@@ -295,11 +325,13 @@ function render() {
     if (isMob) {
         curX = 0;
         const mobileLimit = 0.8;
+        let targetMobileY: number;
         if (scrollProgress < mobileLimit) {
-            curY = 2.5 + (scrollProgress * viewport3DHeight);
+            targetMobileY = 2.5 + (scrollProgress * viewport3DHeight);
         } else {
-            curY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
+            targetMobileY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
         }
+        curY += (targetMobileY - curY) * 0.18;
     } else {
         // Fast easing when far from target (quickly clears text zones), slower on arrival
         const distX = Math.abs(targetX - curX);
@@ -311,7 +343,7 @@ function render() {
     let cardOpacity = 1;
 
     if (isMob) {
-        cardOpacity = Math.max(0, 1 - scrollProgress * 1.5);
+        cardOpacity = Math.max(0, 1 - scrollProgress * 3.0);
     } else {
         if (scrollProgress <= 2.0) cardOpacity = 1;
         else cardOpacity = Math.max(0, 1 - (scrollProgress - 2.0));
