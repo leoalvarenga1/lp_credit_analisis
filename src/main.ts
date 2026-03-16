@@ -348,11 +348,14 @@ function render() {
     if (isMob) {
         curX = 0;
         const mobileLimit = 0.8;
+        let targetMobileY: number;
         if (scrollProgress < mobileLimit) {
-            curY = 2.5 + (scrollProgress * viewport3DHeight);
+            targetMobileY = 2.5 + (scrollProgress * viewport3DHeight);
         } else {
-            curY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
+            targetMobileY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
         }
+        // Easing on mobile Y to smooth out scroll jitter (same idea as desktop X easing)
+        curY += (targetMobileY - curY) * 0.18;
     } else {
         // Fast easing when far from target (quickly clears text zones), slower on arrival
         const distX = Math.abs(targetX - curX);
@@ -364,7 +367,7 @@ function render() {
     let cardOpacity = 1;
 
     if (isMob) {
-        cardOpacity = Math.max(0, 1 - scrollProgress * 1.5);
+        cardOpacity = Math.max(0, 1 - scrollProgress * 3.0);
     } else {
         if (scrollProgress <= 2.0) cardOpacity = 1;
         else cardOpacity = Math.max(0, 1 - (scrollProgress - 2.0));
