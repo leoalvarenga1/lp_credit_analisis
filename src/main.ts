@@ -67,30 +67,27 @@ function createBackTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-function createCloudTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return new THREE.CanvasTexture(canvas);
+// --- FUNDO ESTÁTICO DE NUVENS (CSS) ---
+// Substituiu nuvens animadas Three.js/CSS que causavam artefatos em Safari.
+// Sky background div — recebe a cor do céu em vez do body,
+// para que a barra do Safari (que lê o body) fique sempre branca.
+const skyBg = document.getElementById('sky-bg') as HTMLDivElement;
 
-    // Black background = fully invisible with AdditiveBlending (no purple-dot artifacts on Safari)
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, 512, 512);
-
-    const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-    grad.addColorStop(0,   'rgb(255, 255, 255)');
-    grad.addColorStop(0.3, 'rgb(200, 200, 200)');
-    grad.addColorStop(0.6, 'rgb(40,  40,  40)');
-    grad.addColorStop(1,   'rgb(0,   0,   0)');
-
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 512, 512);
-    
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-}
+// Gradientes radiais brancos sobre fundo transparente = efeito nuvem estático.
+// z-index 4: atrás do canvas (z-5). Canvas fica com background null/transparente,
+// então o cartão 3D aparece acima das nuvens CSS corretamente.
+const staticCloudsLayer = document.createElement('div');
+staticCloudsLayer.style.cssText = `
+    position:fixed;inset:0;z-index:4;pointer-events:none;
+    background:
+        radial-gradient(ellipse 100% 90% at 70% 55%, rgba(255,255,255,0.88) 0%, transparent 55%),
+        radial-gradient(ellipse 70%  65% at 100% 100%, rgba(255,255,255,0.70) 0%, transparent 60%),
+        radial-gradient(ellipse 55%  50% at 0%   100%, rgba(255,255,255,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 45%  40% at 100% 0%,   rgba(255,255,255,0.50) 0%, transparent 55%),
+        radial-gradient(ellipse 40%  35% at 30%  20%,  rgba(255,255,255,0.35) 0%, transparent 55%);
+    filter: blur(22px);
+`;
+document.body.appendChild(staticCloudsLayer);
 
 // CONFIGURAR O THREE.JS
 const canvas = document.querySelector('#webgl-canvas') as HTMLCanvasElement;
@@ -123,68 +120,6 @@ const light = new THREE.DirectionalLight(0xffffff, 1.5);
 light.position.set(5, 15, 10);
 scene.add(light);
 
-// NUVENS
-const cloudTexture = createCloudTexture();
-const clouds: THREE.Mesh[] = [];
-const cloudGroup = new THREE.Group();
-
-function initClouds() {
-    if (isMobileDevice) return;
-
-    const cloudGeo = new THREE.PlaneGeometry(22, 14); 
-    for (let i = 0; i < 15; i++) {
-        const cloudMat = new THREE.MeshBasicMaterial({
-            map: cloudTexture,
-            transparent: true,
-            depthWrite: false,
-            fog: true,
-            blending: THREE.AdditiveBlending,
-        });
-        const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-        resetCloud(cloud, true);
-        cloudGroup.add(cloud);
-        clouds.push(cloud);
-    }
-    scene.add(cloudGroup);
-}
-
-function resetCloud(cloud: THREE.Mesh, initial = false) {
-    cloud.position.x = initial ? (Math.random() * 100 - 50) : 60;
-    cloud.position.y = Math.random() * 30 - 15;
-    cloud.position.z = -5 - Math.random() * 25; 
-    const s = 1.2 + Math.random() * 2.5;
-    cloud.scale.set(s, s * 0.6, s);
-    (cloud as any).speed = 0.01 + Math.random() * 0.02;
-}
-
-initClouds();
-
-// --- NUVENS CSS PARA MOBILE (evita artefatos WebGL/purple dots) ---
-let mobileCloudsContainer: HTMLDivElement | null = null;
-if (isMobileDevice) {
-    mobileCloudsContainer = document.createElement('div');
-    mobileCloudsContainer.id = 'mobile-clouds';
-    mobileCloudsContainer.style.cssText = 'position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;';
-    document.body.appendChild(mobileCloudsContainer);
-    const style = document.createElement('style');
-    style.textContent = `@keyframes cloud-drift { from { transform:translateX(110vw); } to { transform:translateX(-120vw); } }`;
-    document.head.appendChild(style);
-    const cloudConfigs = [
-        { top: '5%',  size: 280, duration: 35, delay: 0,   opacity: 0.35 },
-        { top: '15%', size: 220, duration: 45, delay: -12,  opacity: 0.25 },
-        { top: '25%', size: 320, duration: 40, delay: -20,  opacity: 0.3  },
-        { top: '40%', size: 200, duration: 50, delay: -8,   opacity: 0.2  },
-        { top: '55%', size: 260, duration: 38, delay: -25,  opacity: 0.3  },
-        { top: '65%', size: 180, duration: 55, delay: -15,  opacity: 0.2  },
-        { top: '75%', size: 300, duration: 42, delay: -30,  opacity: 0.25 },
-        { top: '85%', size: 240, duration: 48, delay: -5,   opacity: 0.2  },
-    ];
-    for (const cfg of cloudConfigs) {
-        const el = document.createElement('div');
-        el.style.cssText = `position:absolute;top:${cfg.top};width:${cfg.size}px;height:${cfg.size * 0.55}px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,${cfg.opacity}) 0%,rgba(255,255,255,0) 70%);animation:cloud-drift ${cfg.duration}s linear ${cfg.delay}s infinite;will-change:transform;pointer-events:none;`;
-        mobileCloudsContainer.appendChild(el);
-    }
-}
 
 // --- CRIAÇÃO DOS MODELOS ---
 
@@ -223,9 +158,20 @@ loadHighResSVG('./VerticalCard.svg', 512, 828).then((frontTex) => {
 
 let scrollY = 0;
 let activeSection = 0;
+const mainNav = document.getElementById('main-nav');
 window.addEventListener('scroll', () => {
     scrollY = window.scrollY;
     activeSection = Math.round(scrollY / window.innerHeight);
+    // Nav: branco sólido no topo, transparente com blur ao scrollar
+    if (mainNav) {
+        if (scrollY > 10) {
+            mainNav.style.backgroundColor = 'rgba(255,255,255,0.8)';
+            mainNav.style.backdropFilter = 'blur(12px)';
+        } else {
+            mainNav.style.backgroundColor = 'white';
+            mainNav.style.backdropFilter = 'none';
+        }
+    }
 });
 
 window.addEventListener('resize', () => {
@@ -252,14 +198,6 @@ function render() {
     }
     lastActiveSection = activeSection;
 
-    // --- ANIMAÇÃO DAS NUVENS ---
-    // Movemos apenas se houver nuvens no array (Desktop)
-    if (clouds.length > 0) {
-        clouds.forEach(cloud => {
-            cloud.position.x -= (cloud as any).speed;
-            if (cloud.position.x < -60) resetCloud(cloud);
-        });
-    }
 
     let skyFactor = 0;
     let cloudOpacityBase = 1.0;
@@ -279,24 +217,16 @@ function render() {
 
     if (isMobileDevice) {
         scene.background = null;
-        document.body.style.backgroundColor = `#${currentSkyColor.getHexString()}`;
+        skyBg.style.backgroundColor = `#${currentSkyColor.getHexString()}`;
         const mobAtm = document.getElementById('mobile-atmosphere');
         if (mobAtm) {
             mobAtm.style.opacity = (cloudOpacityBase * 0.7).toString();
         }
-        if (mobileCloudsContainer) {
-            mobileCloudsContainer.style.opacity = cloudOpacityBase.toString();
-        }
+        staticCloudsLayer.style.opacity = (cloudOpacityBase * 0.7).toString();
     } else {
-        scene.background = currentSkyColor;
-        document.body.style.backgroundColor = 'white';
-        
-        // Ajustar opacidade das nuvens no Desktop
-        clouds.forEach(cloud => {
-            if (cloud.material instanceof THREE.MeshBasicMaterial) {
-                cloud.material.opacity = cloudOpacityBase * 0.7;
-            }
-        });
+        scene.background = null;
+        skyBg.style.backgroundColor = `#${currentSkyColor.getHexString()}`;
+        staticCloudsLayer.style.opacity = (cloudOpacityBase * 0.7).toString();
     }
 
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(currentSkyColor);
@@ -312,10 +242,10 @@ function render() {
         // Hysteresis zones: different thresholds for entering vs leaving each zone.
         // This prevents the trackpad micro-reversal oscillation ("engasgada").
         // Enter zone going DOWN at lower sp; exit zone going UP at higher sp.
-        if      (cardTargetZone === 0 && scrollProgress >= 0.20) cardTargetZone = 1;
-        else if (cardTargetZone === 1 && scrollProgress <  0.40) cardTargetZone = 0;
-        else if (cardTargetZone === 1 && scrollProgress >= 1.40) cardTargetZone = 2;
-        else if (cardTargetZone === 2 && scrollProgress <  1.60) cardTargetZone = 1;
+        if (cardTargetZone === 0 && scrollProgress >= 0.20) cardTargetZone = 1;
+        if (cardTargetZone === 1 && scrollProgress <  0.40) cardTargetZone = 0;
+        if (cardTargetZone === 1 && scrollProgress >= 1.40) cardTargetZone = 2;
+        if (cardTargetZone === 2 && scrollProgress <  1.60) cardTargetZone = 1;
         const zoneX = [cardXOffset, -cardXOffset, cardXOffset];
         targetX = zoneX[cardTargetZone];
         targetY = 0;
@@ -327,13 +257,11 @@ function render() {
     if (isMob) {
         curX = 0;
         const mobileLimit = 0.8;
-        let targetMobileY: number;
         if (scrollProgress < mobileLimit) {
-            targetMobileY = 2.5 + (scrollProgress * viewport3DHeight);
+            curY = 2.5 + (scrollProgress * viewport3DHeight);
         } else {
-            targetMobileY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
+            curY = 2.5 + (mobileLimit * viewport3DHeight) + (scrollProgress - mobileLimit) * viewport3DHeight * 0.5;
         }
-        curY += (targetMobileY - curY) * 0.18;
     } else {
         // Fast easing when far from target (quickly clears text zones), slower on arrival
         const distX = Math.abs(targetX - curX);
@@ -345,7 +273,7 @@ function render() {
     let cardOpacity = 1;
 
     if (isMob) {
-        cardOpacity = Math.max(0, 1 - scrollProgress * 3.0);
+        cardOpacity = Math.max(0, 1 - scrollProgress * 1.5);
     } else {
         if (scrollProgress <= 2.0) cardOpacity = 1;
         else cardOpacity = Math.max(0, 1 - (scrollProgress - 2.0));
