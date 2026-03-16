@@ -78,7 +78,7 @@ const skyBg = document.getElementById('sky-bg') as HTMLDivElement;
 // então o cartão 3D aparece acima das nuvens CSS corretamente.
 const staticCloudsLayer = document.createElement('div');
 staticCloudsLayer.style.cssText = `
-    position:fixed;inset:0;z-index:4;pointer-events:none;
+    position:fixed;inset:-30px;z-index:4;pointer-events:none;overflow:hidden;
     background:
         radial-gradient(ellipse 100% 90% at 70% 55%, rgba(255,255,255,0.88) 0%, transparent 55%),
         radial-gradient(ellipse 70%  65% at 100% 100%, rgba(255,255,255,0.70) 0%, transparent 60%),
