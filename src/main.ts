@@ -244,8 +244,8 @@ function render() {
         // Enter zone going DOWN at lower sp; exit zone going UP at higher sp.
         if (cardTargetZone === 0 && scrollProgress >= 0.20) cardTargetZone = 1;
         if (cardTargetZone === 1 && scrollProgress <  0.40) cardTargetZone = 0;
-        if (cardTargetZone === 1 && scrollProgress >= 1.40) cardTargetZone = 2;
-        if (cardTargetZone === 2 && scrollProgress <  1.60) cardTargetZone = 1;
+        if (cardTargetZone === 1 && scrollProgress >= 1.20) cardTargetZone = 2;
+        if (cardTargetZone === 2 && scrollProgress <  1.55) cardTargetZone = 1;
         const zoneX = [cardXOffset, -cardXOffset, cardXOffset];
         targetX = zoneX[cardTargetZone];
         targetY = 0;
@@ -269,7 +269,9 @@ function render() {
         curY += (targetY - curY) * 0.1;
     }
 
-    const baseCardScale = isMob ? 0.8 : 1.2;
+    // Mobile: escala dinâmica baseada na largura da tela (390px = iPhone 14 como referência)
+    // Telas mais estreitas recebem cartão menor para nunca sobrepor texto
+    const baseCardScale = isMob ? Math.min(0.8, 0.8 * window.innerWidth / 390) : 1.2;
     let cardOpacity = 1;
 
     if (isMob) {
