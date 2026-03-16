@@ -310,10 +310,10 @@ function render() {
         // Hysteresis zones: different thresholds for entering vs leaving each zone.
         // This prevents the trackpad micro-reversal oscillation ("engasgada").
         // Enter zone going DOWN at lower sp; exit zone going UP at higher sp.
-        if (cardTargetZone === 0 && scrollProgress >= 0.20) cardTargetZone = 1;
-        if (cardTargetZone === 1 && scrollProgress <  0.40) cardTargetZone = 0;
-        if (cardTargetZone === 1 && scrollProgress >= 1.40) cardTargetZone = 2;
-        if (cardTargetZone === 2 && scrollProgress <  1.60) cardTargetZone = 1;
+        if      (cardTargetZone === 0 && scrollProgress >= 0.20) cardTargetZone = 1;
+        else if (cardTargetZone === 1 && scrollProgress <  0.40) cardTargetZone = 0;
+        else if (cardTargetZone === 1 && scrollProgress >= 1.40) cardTargetZone = 2;
+        else if (cardTargetZone === 2 && scrollProgress <  1.60) cardTargetZone = 1;
         const zoneX = [cardXOffset, -cardXOffset, cardXOffset];
         targetX = zoneX[cardTargetZone];
         targetY = 0;
